@@ -1,5 +1,7 @@
 IA project
 
+$ python.exe DDIA.py
+
 
 Stats du bot en structure:
     -Efficacité:
