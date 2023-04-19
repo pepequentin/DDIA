@@ -47,6 +47,7 @@ class BotThread_load_config(threading.Thread):
         bot.load_config(config, self.file_path)
         bot.change_rsi_default_config()
         bot.change_bollinger_default_config()
+        bot.run_algo()
         bots_second_round.append(bot)
 
 class Bot:
@@ -295,6 +296,7 @@ best_balance = 0
 threads = []
 bots_second_round = []
 new_bot = Bot()
+
 # Set the config of the best bot in a "DATA" variable in order to be used by threads
 config = set_config(best_file)
 # Load the config in the bot
@@ -315,18 +317,14 @@ threads_second_round = []
 config = set_config(best_file)
 print('Round : 1')
 # You can change the range if you want to be quick
-for counter_number_of_bots in range(8): # A range of 1000 bots is enougth for a simple backtracking 
+for counter_number_of_bots in range(10): # A range of 1000 bots is enougth for a simple backtracking 
     new_thread = BotThread_load_config(config, best_file)
     threads_second_round.append(new_thread)
     new_thread.start()
+
 # Join all threads to 
 for new_thread in threads_second_round:
     new_thread.join()
-
-# PENDING : THIS PART HAS BE IN A THREAD
-# Run the algorithm for each bot
-for bot in bots_second_round:
-    bot.run_algo()
 
 # sort the bots by current balance in descending order
 sorted_bots_by_current_balance = sorted(bots_second_round, key=lambda x: x.current_balance, reverse=True)
@@ -352,11 +350,6 @@ while round_num <= 100:  # Change the number of rounds as needed
 
     for new_thread in threads_second_round:
         new_thread.join()
-
-    # PENDING : THIS PART HAS BE IN A THREAD
-    # run the algorithm for each bot
-    for bot in bots_second_round:
-        bot.run_algo()
 
     # sort the bots by current balance in descending order
     sorted_bots_by_current_balance = sorted(bots_second_round, key=lambda x: x.current_balance, reverse=True)
