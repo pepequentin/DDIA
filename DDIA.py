@@ -314,7 +314,8 @@ threads_second_round = []
 # Set the config of the best bot in a "DATA" variable in order to be used by threads
 config = set_config(best_file)
 print('Round : 1')
-for counter_number_of_bots in range(1000): # A range of 1000 bots is enougth for a simple backtracking 
+# You can change the range if you want to be quick
+for counter_number_of_bots in range(8): # A range of 1000 bots is enougth for a simple backtracking 
     new_thread = BotThread_load_config(config, best_file)
     threads_second_round.append(new_thread)
     new_thread.start()
@@ -344,7 +345,7 @@ while round_num <= 100:  # Change the number of rounds as needed
     bots_second_round = []
     threads_second_round = []
     print(f'Round {round_num}')
-    for i in range(1000):
+    for i in range(10):
         new_thread = BotThread_load_config(config, best_file)
         threads_second_round.append(new_thread)
         new_thread.start()
@@ -359,7 +360,7 @@ while round_num <= 100:  # Change the number of rounds as needed
 
     # sort the bots by current balance in descending order
     sorted_bots_by_current_balance = sorted(bots_second_round, key=lambda x: x.current_balance, reverse=True)
-    print (f'Best from this round: {sorted_bots_by_current_balance[0].current_balance}')
+    # print (f'Best from this round: {sorted_bots_by_current_balance[0].current_balance}')
     if sorted_bots_by_current_balance[0].current_balance > best_balance:
         # Save the best bot in a file
         best_bot_current_round = sorted_bots_by_current_balance[0]
