@@ -42,9 +42,13 @@ ETAT : [PENDING]
     ETAT : [PENDING]
     Yann   :
 
+4. Ajouter des stats
+        ex: pourcentage_to_sell
+    (en discuter tout les deux)
+    ETAT :  [PENDING]
 
 ETAT : [NOTHING]
-4. Binance
+5. Binance
     a. Implementer un acces api a binance
     b. Chopper les données des cours de la crypto voulu et tester en fictif
     c. Tester avec de la vraie
