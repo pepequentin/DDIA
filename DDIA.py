@@ -2,6 +2,7 @@ import json
 import random
 import csv
 from sqlite3 import Timestamp
+from typing import Any
 import numpy as np
 import threading
 import shutil
@@ -122,7 +123,6 @@ class Bot:
             self.pourcentage_to_sell = 1
 
     def buy(self, price, current_timestamp):
-        balance_history.append(self.current_balance)
         if price == 0:
             return
         max_buy_units = (self.current_balance * self.pourcentage_to_buy) / price
@@ -131,7 +131,6 @@ class Bot:
         buy_amount = max_buy_units * price
         self.current_balance -= buy_amount
         self.num_units_bought += max_buy_units
-        print(current_timestamp)
         buy_times.append(current_timestamp)
    
     def sell(self, price, sell_all_units, current_timestamp):
@@ -144,10 +143,8 @@ class Bot:
         sell_amount = sell_units * price
         self.current_balance += sell_amount
         self.num_units_bought -= sell_units
-        print(current_timestamp)
         sell_times.append(current_timestamp)
-        balance_history.append(self.current_balance)
-
+ 
 
     def rsi(self, prices):
         if len(prices) < self.interval_rsi:
@@ -243,6 +240,10 @@ class Bot:
                 elif data[date]["close"] < lower_band[0] and buy_or_not_bb:
                     self.buy(data[date]["close"], i)
                     buy_or_not_bb = False
+            
+            # Get and store the potential balance of the bot
+            potential_balance = self.current_balance + (self.num_units_bought * data[i]['close'])
+            balance_history.append(potential_balance)
         
         # Sell every remaining unit bought
         self.sell(data[len(data) - 1]["close"], 1, i)
@@ -302,10 +303,6 @@ def standard_deviation(prices, period):
 
 if __name__ == '__main__':
 
-    # Charger les données du fichier CSV dans un DataFrame pandas
-    alldata = pd.read_csv(csv_file)
-    fig, ax1 = plt.subplots()
-
     # Get the best file
     best_file = "bestfile.txt"
     best_balance = 0
@@ -318,36 +315,18 @@ if __name__ == '__main__':
     new_bot.load_config(config, best_file)
     # Run the algo on the "new_bot" variable
     new_bot.run_algo()
-    print(buy_times)
-    print(sell_times)
-    # Créer un graphique à partir des performances des bots et de la courbe close
-    close_prices = alldata['close']
-    ax1.plot(close_prices)
 
-    # Ajouter des marqueurs pour les moments d'achat et de vente
-    ax1.scatter(buy_times, close_prices[buy_times], marker='^', color='green', edgecolor='none', s=50)
-    ax1.scatter(sell_times, close_prices[sell_times], marker='v', color='red', edgecolor='none', s=50)
-
-    # Ajouter une légende et un titre
-    ax1.legend(['Bot performances', 'Buy times', 'Sell times'])
-    ax1.set_title('Bot performance over time')
-
-    # Ajouter un axe de balance
-    ax2 = ax1.twinx()
-    ax2.plot(balance_history, color='green', label='Balance')
-    ax2.set_ylabel('Balance')
-
-
-    # Afficher le graphique
-    plt.show()
-    exit (0)
     # Save the best bot in a file
     best_balance = new_bot.current_balance
-    print(best_balance)
+
     # Second round and beyond
     round_num = 1  # Start from round 1
 
+    print("Debut de la simulation")
     while round_num <= 10:  # Change the number of rounds as needed
+        buy_times = []
+        sell_times = []
+        balance_history = []
         config = set_config(best_file) # Load the wanted config file, here: the best one
         all_bots_from_a_round = []
         threads_second_round = []
@@ -373,8 +352,52 @@ if __name__ == '__main__':
             # Copy into the bestfile.txt config file
             shutil.copy(best_file, "bestfile.txt")
 
-        print(sorted_bots_by_current_balance[0].current_balance)
         # Next round
         round_num += 1
 
-    print("Fin de la simulation")
+    print("Fin de la simulation\n")
+    print("Display the performance of the best bot")
+    buy_times = []
+    sell_times = []
+    balance_history = []
+
+    new_bot = Bot()
+
+    # Set the config of the best bot in a "DATA" variable in order to be used by threads
+    config = set_config(best_file)
+    # Load the config in the bot
+    new_bot.load_config(config, best_file)
+    # Run the algo on the "new_bot" variable
+    new_bot.run_algo()
+
+    # Charger les données du fichier CSV dans un DataFrame pandas
+    alldata = pd.read_csv(csv_file)
+    fig, ax1 = plt.subplots()
+
+    # Créer un graphique à partir des performances des bots et de la courbe close
+    close_prices = alldata['close']
+    timestamps = alldata['timestamp']
+    ax1.plot(close_prices)
+
+    # Ajouter des marqueurs pour les moments d'achat et de vente
+    ax1.scatter(buy_times, close_prices[buy_times], marker='^', color='green', edgecolor='none', s=50)
+    ax1.scatter(sell_times, close_prices[sell_times], marker='v', color='red', edgecolor='none', s=50)
+
+    # Ajouter une légende et un titre
+    ax1.legend(['Close row ETH', 'Buy times', 'Sell times'])
+    ax1.set_title('Bot performance over time')
+
+    # Tracer la courbe de balance
+    ax2 = ax1.twinx()
+    ax2.plot(balance_history, color='black')
+    ax2.set_ylabel('Potential Balance $', color='black')
+    ax2.tick_params(axis='y', labelcolor='black')
+
+    # Étendre l'axe des abscisses de ax2
+    x1_lim, x2_lim = ax1.get_xlim()
+    ax2.set_xlim(x1_lim, x2_lim)
+    # Définir le titre de la fenêtre ###### DOESNT WORKS
+    plt.title("Bot performance over time")
+
+    # Afficher le graphique
+    plt.show()
