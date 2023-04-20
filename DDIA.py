@@ -65,9 +65,9 @@ class Bot:
             self.algo_used = random.sample(algo_available, k=random.randint(1, len(algo_available)))
             self.num_units_bought = 0
             self.interval_rsi = random.randint(8, 16)
-            self.upper_rsi = random.uniform(50, 95)
-            self.lower_rsi = random.uniform(10, 50)
-            self.period = random.randint(10, 50)
+            self.upper_rsi = random.uniform(70, 95)
+            self.lower_rsi = random.uniform(0, 20)
+            self.period = random.randint(10, 20)
             self.num_std = random.randint(0, 100)
             self.error = 0
             self.algo_params = {}
@@ -85,13 +85,13 @@ class Bot:
 
     def change_rsi_default_config(self):
         self.interval_rsi = random.randint(8, 16)
-        self.upper_rsi = random.uniform(50, 95)
-        self.lower_rsi = random.uniform(10, 50)
-        self.period = random.randint(10, 50)
+        self.upper_rsi = random.uniform(70, 100)
+        self.lower_rsi = random.uniform(10, 20)
+        self.period = random.randint(12, 16)
         self.num_std = random.randint(0, 100)
 
     def change_bollinger_default_config(self):
-        self.period += random.randint(-20, 20)     
+        self.period += random.randint(-50, 50)     
         if self.period < 1:
             self.period = 1
         if self.period > 100:
@@ -101,12 +101,12 @@ class Bot:
             self.num_std = 1
         if self.num_std > 100:
             self.num_std = 100
-        self.pourcentage_to_buy += random.uniform(-0.1, 0.1)
+        self.pourcentage_to_buy += random.uniform(-0.5, 0.5)
         if self.pourcentage_to_buy < 0.1:
             self.pourcentage_to_buy = 0.1
         if self.pourcentage_to_buy > 1:
             self.pourcentage_to_buy = 1
-        self.pourcentage_to_sell += random.uniform(-0.1, 0.1)
+        self.pourcentage_to_sell += random.uniform(-0.5, 0.5)
         if self.pourcentage_to_sell < 0.1:
             self.pourcentage_to_sell = 0.1
         if self.pourcentage_to_sell > 1:
@@ -328,7 +328,7 @@ threads_second_round = []
 config = set_config(best_file)
 print('Round : 1')
 # You can change the range if you want to be quick
-for counter_number_of_bots in range(1000): # A range of 1000 bots is enougth for a simple backtracking 
+for counter_number_of_bots in range(2000): # A range of 1000 bots is enougth for a simple backtracking 
     new_thread = BotThread_load_config(config, best_file)
     threads_second_round.append(new_thread)
     new_thread.start()
@@ -349,12 +349,12 @@ best_bot.save_config(best_file)
 # Second round and beyond
 round_num = 2  # Start from round 2
 
-while round_num <= 100:  # Change the number of rounds as needed
+while round_num <= 200:  # Change the number of rounds as needed
     config = set_config(best_file) # Load the wanted config file, here: the best one
     bots_second_round = []
     threads_second_round = []
     print(f'Round {round_num}')
-    for i in range(500):
+    for i in range(1000):
         new_thread = BotThread_load_config(config, best_file)
         threads_second_round.append(new_thread)
         new_thread.start()

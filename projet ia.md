@@ -53,3 +53,11 @@ ETAT : [NOTHING]
     b. Chopper les données des cours de la crypto voulu et tester en fictif
     c. Tester avec de la vraie
 
+
+
+To do:
+
+    Main des rounds
+    Avoir un dossier pour les algo
+    Fix le threading
+    Avoir une visu des bots
