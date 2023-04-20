@@ -61,3 +61,4 @@ To do:
     Avoir un dossier pour les algo
     Fix le threading
     Avoir une visu des bots
+    

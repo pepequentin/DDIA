@@ -1,9 +1,17 @@
 import json
 import random
 import csv
+from sqlite3 import Timestamp
 import numpy as np
 import threading
 import shutil
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# Définir les performances des bots et les moments d'achat et de vente
+buy_times = []
+sell_times = []
+balance_history = []
 
 # CSV file set
 csv_file="ETH.csv"
@@ -16,11 +24,12 @@ with open(csv_file, 'r') as f:
     next(reader)  # skip header row
     i = 0
     for row in reader:
+        timestamp = float(row[0])
         open_price = float(row[1])
         high = float(row[2])
         low = float(row[3])
         close = float(row[4])
-        data[i] = {'open': open_price, 'high': high, 'low': low, 'close': close}
+        data[i] = {'timestamp': timestamp, 'open': open_price, 'high': high, 'low': low, 'close': close}
         i += 1
 
 # Algorithm used by the program, they are chosen randomly
@@ -48,7 +57,7 @@ class BotThread_load_config(threading.Thread):
         bot.change_rsi_default_config()
         bot.change_bollinger_default_config()
         bot.run_algo()
-        bots_second_round.append(bot)
+        all_bots_from_a_round.append(bot)
 
 class Bot:
     def __init__(self, config_file=None):
@@ -66,7 +75,7 @@ class Bot:
             self.num_units_bought = 0
             self.interval_rsi = random.randint(8, 16)
             self.upper_rsi = random.uniform(70, 95)
-            self.lower_rsi = random.uniform(0, 20)
+            self.lower_rsi = random.uniform(0, 30)
             self.period = random.randint(10, 20)
             self.num_std = random.randint(0, 100)
             self.error = 0
@@ -86,7 +95,7 @@ class Bot:
     def change_rsi_default_config(self):
         self.interval_rsi = random.randint(8, 16)
         self.upper_rsi = random.uniform(70, 100)
-        self.lower_rsi = random.uniform(10, 20)
+        self.lower_rsi = random.uniform(10, 30)
         self.period = random.randint(12, 16)
         self.num_std = random.randint(0, 100)
 
@@ -96,12 +105,12 @@ class Bot:
             self.period = 1
         if self.period > 100:
             self.period = 100
-        self.num_std += random.randint(-20, 20)
+        self.num_std += random.randint(-50, 50)
         if self.num_std < 1:
             self.num_std = 1
         if self.num_std > 100:
             self.num_std = 100
-        self.pourcentage_to_buy += random.uniform(-0.5, 0.5)
+        self.pourcentage_to_buy += random.uniform(-0.2, 0.2)
         if self.pourcentage_to_buy < 0.1:
             self.pourcentage_to_buy = 0.1
         if self.pourcentage_to_buy > 1:
@@ -112,7 +121,8 @@ class Bot:
         if self.pourcentage_to_sell > 1:
             self.pourcentage_to_sell = 1
 
-    def buy(self, price):
+    def buy(self, price, current_timestamp):
+        balance_history.append(self.current_balance)
         if price == 0:
             return
         max_buy_units = (self.current_balance * self.pourcentage_to_buy) / price
@@ -121,8 +131,10 @@ class Bot:
         buy_amount = max_buy_units * price
         self.current_balance -= buy_amount
         self.num_units_bought += max_buy_units
-    
-    def sell(self, price, sell_all_units):
+        print(current_timestamp)
+        buy_times.append(current_timestamp)
+   
+    def sell(self, price, sell_all_units, current_timestamp):
         if sell_all_units == 1:
             sell_units = self.num_units_bought
         else:
@@ -132,6 +144,9 @@ class Bot:
         sell_amount = sell_units * price
         self.current_balance += sell_amount
         self.num_units_bought -= sell_units
+        print(current_timestamp)
+        sell_times.append(current_timestamp)
+        balance_history.append(self.current_balance)
 
 
     def rsi(self, prices):
@@ -191,15 +206,15 @@ class Bot:
                     if rsi_values[i] == -1:
                         self.error+=1
                     elif rsi > upper and buy_or_not_rsi:
-                        self.buy(prices[i])
+                        self.buy(prices[i], i)
                         buy_or_not_rsi = False
                     elif rsi < lower and not buy_or_not_rsi:
-                        self.sell(prices[i], 0)
+                        self.sell(prices[i], 0, i)
                         buy_or_not_rsi = True
                 else:
                     interval_set.append(prices[i])
                     if len(interval_set) == interval:
-                        rsi = self.rsi(interval_set)
+                        rsi = self.rsi(interval_set, i)
                         rsi_values[i] = rsi
                         interval_set = []
 
@@ -221,20 +236,16 @@ class Bot:
                 
                 # Check if the price is above the upper Bollinger Band
                 if data[date]["close"] > upper_band[0]:
-                    self.sell(data[date]["close"], 0)
+                    self.sell(data[date]["close"], 0, i)
                     buy_or_not_bb = True
                 
                 # Check if the price is below the lower Bollinger Band
                 elif data[date]["close"] < lower_band[0] and buy_or_not_bb:
-                    self.buy(data[date]["close"])
+                    self.buy(data[date]["close"], i)
                     buy_or_not_bb = False
         
         # Sell every remaining unit bought
-        self.sell(data[len(data) - 1]["close"], 1)
-                                    
-    def get_data_at_timestamp(self, timestamp):
-        #Get data at a wanted timestamp
-        return data.get(timestamp, None)
+        self.sell(data[len(data) - 1]["close"], 1, i)
 
     def load_config(self, config, file_path):
         # Set attributes from config
@@ -289,92 +300,81 @@ def standard_deviation(prices, period):
     """
     return np.std(prices[-period:])
 
+if __name__ == '__main__':
+
+    # Charger les données du fichier CSV dans un DataFrame pandas
+    alldata = pd.read_csv(csv_file)
+    fig, ax1 = plt.subplots()
+
+    # Get the best file
+    best_file = "bestfile.txt"
+    best_balance = 0
+    all_bots_from_a_round = []
+    new_bot = Bot()
+
+    # Set the config of the best bot in a "DATA" variable in order to be used by threads
+    config = set_config(best_file)
+    # Load the config in the bot
+    new_bot.load_config(config, best_file)
+    # Run the algo on the "new_bot" variable
+    new_bot.run_algo()
+    print(buy_times)
+    print(sell_times)
+    # Créer un graphique à partir des performances des bots et de la courbe close
+    close_prices = alldata['close']
+    ax1.plot(close_prices)
+
+    # Ajouter des marqueurs pour les moments d'achat et de vente
+    ax1.scatter(buy_times, close_prices[buy_times], marker='^', color='green', edgecolor='none', s=50)
+    ax1.scatter(sell_times, close_prices[sell_times], marker='v', color='red', edgecolor='none', s=50)
+
+    # Ajouter une légende et un titre
+    ax1.legend(['Bot performances', 'Buy times', 'Sell times'])
+    ax1.set_title('Bot performance over time')
+
+    # Ajouter un axe de balance
+    ax2 = ax1.twinx()
+    ax2.plot(balance_history, color='green', label='Balance')
+    ax2.set_ylabel('Balance')
 
 
+    # Afficher le graphique
+    plt.show()
+    exit (0)
+    # Save the best bot in a file
+    best_balance = new_bot.current_balance
+    print(best_balance)
+    # Second round and beyond
+    round_num = 1  # Start from round 1
 
+    while round_num <= 10:  # Change the number of rounds as needed
+        config = set_config(best_file) # Load the wanted config file, here: the best one
+        all_bots_from_a_round = []
+        threads_second_round = []
+        print(f'Round {round_num}')
+        for i in range(10):
+            new_thread = BotThread_load_config(config, best_file)
+            threads_second_round.append(new_thread)
+            new_thread.start()
 
+        for new_thread in threads_second_round:
+            new_thread.join()
 
+        # sort the bots by current balance in descending order
+        sorted_bots_by_current_balance = sorted(all_bots_from_a_round, key=lambda x: x.current_balance, reverse=True)
+        # print (f'Best from this round: {sorted_bots_by_current_balance[0].current_balance}')
+        if sorted_bots_by_current_balance[0].current_balance > best_balance:
+            # Save the best bot in a file
+            best_bot_current_round = sorted_bots_by_current_balance[0]
+            best_bot_current_round.save_config(f'config_file/config_file_{round_num}.txt')
+            best_file = f"config_file/config_file_{round_num}.txt"
+            best_balance = best_bot_current_round.current_balance
+            print(f"Round {round_num}, New best bot: current_balance={best_bot_current_round.current_balance}")
+            # Copy into the bestfile.txt config file
+            shutil.copy(best_file, "bestfile.txt")
 
+        print(sorted_bots_by_current_balance[0].current_balance)
+        # Next round
+        round_num += 1
 
-
-
-# Here we should have a main function in order to make the file a bit more enjoyable 
-
-            # First round
-# Get the best file
-best_file = "bestfile.txt"
-best_balance = 0
-threads = []
-bots_second_round = []
-new_bot = Bot()
-
-# Set the config of the best bot in a "DATA" variable in order to be used by threads
-config = set_config(best_file)
-# Load the config in the bot
-new_bot.load_config(config, best_file)
-# Run the algo on the "new_bot" variable
-new_bot.run_algo()
-
-# We want to keep the balance of this bot in the array of incomming bots, so we append his performances in the array of bots
-with open(best_file, "r") as f:
-    config = json.load(f)
-new_bot.current_balance = config['current_balance']
-bots_second_round.append(new_bot)
-
-# Array of threads
-threads_second_round = []
-
-# Set the config of the best bot in a "DATA" variable in order to be used by threads
-config = set_config(best_file)
-print('Round : 1')
-# You can change the range if you want to be quick
-for counter_number_of_bots in range(2000): # A range of 1000 bots is enougth for a simple backtracking 
-    new_thread = BotThread_load_config(config, best_file)
-    threads_second_round.append(new_thread)
-    new_thread.start()
-
-# Join all threads to 
-for new_thread in threads_second_round:
-    new_thread.join()
-
-# sort the bots by current balance in descending order
-sorted_bots_by_current_balance = sorted(bots_second_round, key=lambda x: x.current_balance, reverse=True)
-
-# Save the best bot in a file
-best_bot = sorted_bots_by_current_balance[0]
-print (f'Best from this round: {sorted_bots_by_current_balance[0].current_balance}')
-best_balance = best_bot.current_balance
-best_bot.save_config(best_file)
-
-# Second round and beyond
-round_num = 2  # Start from round 2
-
-while round_num <= 200:  # Change the number of rounds as needed
-    config = set_config(best_file) # Load the wanted config file, here: the best one
-    bots_second_round = []
-    threads_second_round = []
-    print(f'Round {round_num}')
-    for i in range(1000):
-        new_thread = BotThread_load_config(config, best_file)
-        threads_second_round.append(new_thread)
-        new_thread.start()
-
-    for new_thread in threads_second_round:
-        new_thread.join()
-
-    # sort the bots by current balance in descending order
-    sorted_bots_by_current_balance = sorted(bots_second_round, key=lambda x: x.current_balance, reverse=True)
-    # print (f'Best from this round: {sorted_bots_by_current_balance[0].current_balance}')
-    if sorted_bots_by_current_balance[0].current_balance > best_balance:
-        # Save the best bot in a file
-        best_bot_current_round = sorted_bots_by_current_balance[0]
-        best_bot_current_round.save_config(f'config_file_{round_num}.txt')
-        best_file = f"config_file_{round_num}.txt"
-        best_balance = best_bot_current_round.current_balance
-        print(f"Round {round_num}, New best bot: current_balance={best_bot_current_round.current_balance}")
-        # Copy into the bestfile.txt config file
-        shutil.copy(best_file, "bestfile.txt")
-
-    round_num += 1
-
-print("Fin de la simulation")
+    print("Fin de la simulation")

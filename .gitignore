@@ -130,4 +130,4 @@ dmypy.json
 
 
 # all config files
-*config_file*
+config_file/*config_file*
