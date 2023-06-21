@@ -15,7 +15,7 @@ sell_times = []
 balance_history = []
 
 # CSV file set
-csv_file="ETH.csv"
+csv_file="BTC-USD.csv"
 
 # CSV file data will be stored inside this variable, in order to be used by multiple threads
 data = {}
@@ -25,12 +25,11 @@ with open(csv_file, 'r') as f:
     next(reader)  # skip header row
     i = 0
     for row in reader:
-        timestamp = float(row[0])
         open_price = float(row[1])
         high = float(row[2])
         low = float(row[3])
         close = float(row[4])
-        data[i] = {'timestamp': timestamp, 'open': open_price, 'high': high, 'low': low, 'close': close}
+        data[i] = {'open': open_price, 'high': high, 'low': low, 'close': close}
         i += 1
 
 # Algorithm used by the program, they are chosen randomly
@@ -323,7 +322,7 @@ if __name__ == '__main__':
     round_num = 1  # Start from round 1
 
     print("Debut de la simulation")
-    while round_num <= 10:  # Change the number of rounds as needed
+    while round_num <= 1:  # Change the number of rounds as needed
         buy_times = []
         sell_times = []
         balance_history = []
@@ -331,7 +330,7 @@ if __name__ == '__main__':
         all_bots_from_a_round = []
         threads_second_round = []
         print(f'Round {round_num}')
-        for i in range(10):
+        for i in range(5):
             new_thread = BotThread_load_config(config, best_file)
             threads_second_round.append(new_thread)
             new_thread.start()
@@ -375,8 +374,7 @@ if __name__ == '__main__':
     fig, ax1 = plt.subplots()
 
     # Créer un graphique à partir des performances des bots et de la courbe close
-    close_prices = alldata['close']
-    timestamps = alldata['timestamp']
+    close_prices = alldata['Close']
     ax1.plot(close_prices)
 
     # Ajouter des marqueurs pour les moments d'achat et de vente
