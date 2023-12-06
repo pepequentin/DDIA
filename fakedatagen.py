@@ -9,10 +9,10 @@ cont = 0
 dataset = []
 header = "Date,Open,High,Low,Close"
 timestamp=1
-open=1000
-high=1010
-low=900
-close=1002
+open=9000
+high=9010
+low=8900
+close=9002
 
 dataset.append(header)
 
@@ -22,10 +22,10 @@ while cont < 10000:
 
     dataset.append(result_string)
     timestamp+=1
-    open  *= random.uniform(0.95, 1.05)
-    high  *= random.uniform(0.95, 1.05)
-    low   *= random.uniform(0.95, 1.05)
-    close *= random.uniform(0.95, 1.05)
+    open  *= random.uniform(0.98, 1.02)
+    high  *= random.uniform(0.98, 1.02)
+    low   *= random.uniform(0.98, 1.02)
+    close *= random.uniform(0.98, 1.02)
 
     cont += 1
 

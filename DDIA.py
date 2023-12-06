@@ -69,7 +69,7 @@ class Bot:
         else:
             # Default configuration
             self.name = "richard" # Default name
-            self.starting_balance = 100
+            self.starting_balance = 5000
             self.current_balance = self.starting_balance
             self.pourcentage_to_buy = random.uniform(0.1, 0.999)
             self.pourcentage_to_sell = random.uniform(0.1, 0.999)
@@ -333,7 +333,7 @@ if __name__ == '__main__':
         all_bots_from_a_round = []
         threads_second_round = []
         print(f'Round {round_num}')
-        for i in range(50):
+        for i in range(100):
             new_thread = BotThread_load_config(config, best_file)
             threads_second_round.append(new_thread)
             new_thread.start()
