@@ -15,8 +15,6 @@ sell_times = []
 balance_history = []
 
 # CSV file set
-# csv_file="FOREX.csv"
-# csv_file="BTC-USD.csv"
 csv_file="data.csv"
 
 # CSV file data will be stored inside this variable, in order to be used by multiple threads
@@ -333,7 +331,7 @@ if __name__ == '__main__':
         all_bots_from_a_round = []
         threads_second_round = []
         print(f'Round {round_num}')
-        for i in range(100):
+        for i in range(1):
             new_thread = BotThread_load_config(config, best_file)
             threads_second_round.append(new_thread)
             new_thread.start()
