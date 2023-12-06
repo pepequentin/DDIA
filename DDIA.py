@@ -15,8 +15,9 @@ sell_times = []
 balance_history = []
 
 # CSV file set
-csv_file="FOREX.csv"
+# csv_file="FOREX.csv"
 # csv_file="BTC-USD.csv"
+csv_file="data.csv"
 
 # CSV file data will be stored inside this variable, in order to be used by multiple threads
 data = {}
@@ -26,10 +27,10 @@ with open(csv_file, 'r') as f:
     next(reader)  # skip header row
     i = 0
     for row in reader:
-        open_price = float(row[3])
-        high = float(row[4])
-        low = float(row[5])
-        close = float(row[6])
+        open_price = float(row[1])
+        high = float(row[2])
+        low = float(row[3])
+        close = float(row[4])
         data[i] = {'open': open_price, 'high': high, 'low': low, 'close': close}
         i += 1
 
@@ -68,7 +69,7 @@ class Bot:
         else:
             # Default configuration
             self.name = "richard" # Default name
-            self.starting_balance = 1000
+            self.starting_balance = 100
             self.current_balance = self.starting_balance
             self.pourcentage_to_buy = random.uniform(0.1, 0.999)
             self.pourcentage_to_sell = random.uniform(0.1, 0.999)
@@ -92,6 +93,7 @@ class Bot:
             self.efficacity = 0.0
             self.bought_price = None
             self.config_file_path = None
+        self.leveraging = 1  # Niveau d'effet de levier par défaut
 
     def change_rsi_default_config(self):
         self.interval_rsi = random.randint(8, 16)
@@ -125,7 +127,7 @@ class Bot:
     def buy(self, price, current_timestamp):
         if price == 0:
             return
-        max_buy_units = (self.current_balance * self.pourcentage_to_buy) / price
+        max_buy_units = (self.current_balance * self.pourcentage_to_buy * self.leveraging) / price
         if max_buy_units == 0:
             return
         buy_amount = max_buy_units * price
@@ -242,7 +244,7 @@ class Bot:
                     buy_or_not_bb = False
             
             # Get and store the potential balance of the bot
-            potential_balance = self.current_balance + (self.num_units_bought * data[i]['close'])
+            potential_balance = self.current_balance + (self.num_units_bought * data[i]['close'] * self.leveraging)
             balance_history.append(potential_balance)
         
         # Sell every remaining unit bought
@@ -323,7 +325,7 @@ if __name__ == '__main__':
     round_num = 1  # Start from round 1
 
     print("Debut de la simulation")
-    while round_num <= 500:  # Change the number of rounds as needed
+    while round_num <= 1:  # Change the number of rounds as needed
         buy_times = []
         sell_times = []
         balance_history = []
@@ -331,7 +333,7 @@ if __name__ == '__main__':
         all_bots_from_a_round = []
         threads_second_round = []
         print(f'Round {round_num}')
-        for i in range(200):
+        for i in range(50):
             new_thread = BotThread_load_config(config, best_file)
             threads_second_round.append(new_thread)
             new_thread.start()
