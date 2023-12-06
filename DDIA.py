@@ -15,7 +15,8 @@ sell_times = []
 balance_history = []
 
 # CSV file set
-csv_file="BTC-USD.csv"
+csv_file="FOREX.csv"
+# csv_file="BTC-USD.csv"
 
 # CSV file data will be stored inside this variable, in order to be used by multiple threads
 data = {}
@@ -25,10 +26,10 @@ with open(csv_file, 'r') as f:
     next(reader)  # skip header row
     i = 0
     for row in reader:
-        open_price = float(row[1])
-        high = float(row[2])
-        low = float(row[3])
-        close = float(row[4])
+        open_price = float(row[3])
+        high = float(row[4])
+        low = float(row[5])
+        close = float(row[6])
         data[i] = {'open': open_price, 'high': high, 'low': low, 'close': close}
         i += 1
 
@@ -322,7 +323,7 @@ if __name__ == '__main__':
     round_num = 1  # Start from round 1
 
     print("Debut de la simulation")
-    while round_num <= 1:  # Change the number of rounds as needed
+    while round_num <= 500:  # Change the number of rounds as needed
         buy_times = []
         sell_times = []
         balance_history = []
@@ -330,7 +331,7 @@ if __name__ == '__main__':
         all_bots_from_a_round = []
         threads_second_round = []
         print(f'Round {round_num}')
-        for i in range(5):
+        for i in range(200):
             new_thread = BotThread_load_config(config, best_file)
             threads_second_round.append(new_thread)
             new_thread.start()
