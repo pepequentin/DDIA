@@ -31,7 +31,7 @@ ETAT : [DONE]
             4e - Decision        -> Par round le correction va dupliquer le meilleur de la piscine, modifier les stats du bot de maniere random
 
 
-ETAT : [PENDING]
+ETAT : [DONE]
 3. Tableau des algo de trading 
 
     ETAT : [DONE]
@@ -39,16 +39,12 @@ ETAT : [PENDING]
      -RSI
      -Bollinger Bands
 
-    ETAT : [PENDING]
-    Yann   :
 
 4. Ajouter des stats
-        ex: pourcentage_to_sell
-    (en discuter tout les deux)
     ETAT :  [PENDING]
 
 ETAT : [NOTHING]
-5. Binance
+5. Binance ou autre base
     a. Implementer un acces api a binance
     b. Chopper les données des cours de la crypto voulu et tester en fictif
     c. Tester avec de la vraie
@@ -57,8 +53,6 @@ ETAT : [NOTHING]
 
 To do:
 
-    Main des rounds
     Avoir un dossier pour les algo
     Fix le threading
-    Avoir une visu des bots
     Avoir le temps elapse, moyenne $/JOUR
